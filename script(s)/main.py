@@ -1,4 +1,4 @@
-import pygame
+import pygame, gif_pygame
 import cv2
 import mediapipe as mp
 import time
@@ -7,10 +7,19 @@ import random
 
 # Initialize Pygame
 pygame.init()
+pygame.font.init()
 
 # Screen dimensions
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 800
+
+
+BLACK = ( 0, 0, 0)
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
+RED = ( 255, 0, 0)
+
+GameFont = pygame.font.SysFont('Comic Sans MS', 30)
 
 HandTracking = False
 
@@ -60,6 +69,9 @@ Option = pygame.transform.scale(Option, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 OptionImg = Option
 
+WinScreen = gif_pygame.load('../assets/WinScreen.gif')
+gif_pygame.transform.scale(WinScreen, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
 BG = pygame.image.load('../assets/bg.png')
 BG = pygame.transform.scale(BG, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
@@ -93,7 +105,8 @@ HandOpen = True
 
 NPCs = []
 
-CurrentWave = 2
+TotalWave = 5
+CurrentWave = 6
 
 class NPC(pygame.sprite.Sprite):
     def __init__(self, charNum: int = 1, x: int = 0, y: int = 0, velRange: int = 40):
@@ -204,22 +217,48 @@ def option_menu() -> None:
         screen.blit(OptionImg, (0, 0))
         pygame.display.update()
 
+def game_won():
+    #330 480, 390 525 - yes
+    #615 480, 670 525 - no
+    global WinScreen, screen, CurrentWave
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+        
+        x, y = pygame.mouse.get_pos()
+
+        if x >= 330 and y >= 480 and x <= 390 and y <= 525:
+            if pygame.mouse.get_pressed(3)[0]:
+                pygame.mixer.Sound.play(ClickSound)
+                CurrentWave = 1
+                main()
+        elif x >= 615 and y >= 480 and x <= 670 and y <= 525:
+            if pygame.mouse.get_pressed(3)[0]:
+                pygame.mixer.Sound.play(ClickSound)
+                pygame.quit()
+
+        WinScreen.render(screen, (0, 0))
+        pygame.display.update()
+
+
 def main():
-    global HandY, HandX, cTime, pTime, cap, detector, screen, HandSprite, OpenHandSprite, CloseHandSprite, NPCs, BG, HandOpen, dt, CurrentWave
+    global HandY, HandX, cTime, pTime, cap, detector, screen, HandSprite, OpenHandSprite, CloseHandSprite, NPCs, BG, HandOpen, dt, CurrentWave, TotalWave, RED, GREEN, BLACK, WHITE, GameFont
 
     WaveTime = 0
     running = True
-
+ 
     main_menu()
     option_menu()
 
 
     #### TEMP ######
-    spawn_char(1, 300, 300)
-    spawn_char(2, 300, 300)
-    spawn_char(3, 300, 300)
-    spawn_char(4, 300, 300)
-    spawn_char(5, 300, 300)
+    # spawn_char(1, 300, 300)
+    # spawn_char(2, 300, 300)
+    # spawn_char(3, 300, 300)
+    # spawn_char(4, 300, 300)
+    # spawn_char(5, 300, 300)
     ################
     
     while running:
@@ -233,13 +272,19 @@ def main():
         pTime = cTime
         WaveTime += dt
 
+        WaveText = GameFont.render(f'Wave: {CurrentWave}/{TotalWave}', False, RED)
+
         screen.blit(BG, (0, 0))
         update_npc(NPCs)
         screen.blit(HandSprite, (HandX, HandY))
+        screen.blit(WaveText, (0, 0))
 
-        # if WaveTime >= (6 - CurrentWave): 
-        #     spawn_char(random.randint(1, CurrentWave), 300, 300, 0)
-        #     WaveTime = 0
+        if CurrentWave > TotalWave:
+            game_won()
+
+        if WaveTime >= (TotalWave + 1 - CurrentWave): 
+            spawn_char(random.randint(1, CurrentWave), 300, 300)
+            WaveTime = 0
         
         if HandTracking:
             success, img = cap.read()
