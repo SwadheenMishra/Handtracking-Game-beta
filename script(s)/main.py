@@ -106,7 +106,7 @@ HandOpen = True
 NPCs = []
 
 TotalWave = 5
-CurrentWave = 6
+CurrentWave = 1
 
 class NPC(pygame.sprite.Sprite):
     def __init__(self, charNum: int = 1, x: int = 0, y: int = 0, velRange: int = 40):
