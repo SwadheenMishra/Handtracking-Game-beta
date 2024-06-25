@@ -13,14 +13,15 @@ pygame.font.init()
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 800
 
+GameFont = pygame.font.SysFont('Comic Sans MS', 30)
 
 BLACK = ( 0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = ( 255, 0, 0)
 
-GameFont = pygame.font.SysFont('Comic Sans MS', 30)
 
+GameOpend = False
 HandTracking = False
 
 pTime = 0
@@ -35,6 +36,7 @@ CharScaleY = 77
 CharScaleX = 90
 CharHitboxY = 60
 CharHitboxX = 48
+BoxScale = 300, 300
 
 
 cap = cv2.VideoCapture(0)
@@ -72,8 +74,14 @@ OptionImg = Option
 WinScreen = gif_pygame.load('../assets/WinScreen.gif')
 gif_pygame.transform.scale(WinScreen, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
+LoseScreen = gif_pygame.load('../assets/LoseScreen.gif')
+gif_pygame.transform.scale(LoseScreen, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
 BG = pygame.image.load('../assets/bg.png')
 BG = pygame.transform.scale(BG, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+MagicBox = pygame.image.load('../assets/magicBox.png')
+MagicBox = pygame.transform.scale(MagicBox, BoxScale)
 
 Char1 = pygame.image.load('../assets/char1.png')
 Char1 = pygame.transform.scale(Char1, (CharScaleX, CharScaleY))
@@ -107,6 +115,10 @@ NPCs = []
 
 TotalWave = 5
 CurrentWave = 1
+CaptureGoal = 0
+CurrentCapture = 0
+CharEscaped = 0
+maxEscape = 3
 
 class NPC(pygame.sprite.Sprite):
     def __init__(self, charNum: int = 1, x: int = 0, y: int = 0, velRange: int = 40):
@@ -116,6 +128,7 @@ class NPC(pygame.sprite.Sprite):
         self.charNum = charNum
         self.velY = random.randint(-velRange, velRange)
         self.velX = random.randint(velRange // 2, velRange)
+        self.IsAlive = True
         
         match self.charNum:
             case 1:
@@ -133,6 +146,20 @@ class NPC(pygame.sprite.Sprite):
 
 
     def update(self):
+        global CurrentCapture, CharEscaped
+        #(830, 575)
+        #(960, 785)
+        if not self.IsAlive:
+            return
+        
+        if (830 - self.x) < CharHitboxX and (575 - self.y) < CharHitboxY and (960 - self.x) > -CharHitboxX and (785 - self.y) > -CharHitboxY:
+            self.IsAlive = False
+            CurrentCapture += 1
+        
+        if (0 - self.x) > CharHitboxX or (0 - self.y) > CharHitboxY or (SCREEN_WIDTH - self.x) < -CharHitboxX or (SCREEN_HEIGHT - self.y) < -CharHitboxY:
+            self.IsAlive = False
+            CharEscaped += 1
+
         NotMove = False
 
         if not HandOpen:
@@ -143,6 +170,7 @@ class NPC(pygame.sprite.Sprite):
         if not NotMove:
             self.move()
 
+        
         screen.blit(self.char, (self.x, self.y))
 
     def move(self):
@@ -177,7 +205,7 @@ def main_menu() -> None:
             MainMenuImg = MainMenu2
             if pygame.mouse.get_pressed(3)[0]:
                 pygame.mixer.Sound.play(ClickSound)
-                return #530 460 860 660
+                return 
         elif x >= 530 and y >= 460 and x <= 860 and y <= 600:
             MainMenuImg = MainMenu1
             if pygame.mouse.get_pressed(3)[0]:
@@ -243,23 +271,43 @@ def game_won():
         pygame.display.update()
 
 
+def game_lose():
+    global LoseScreen, screen, CurrentWave, CharEscaped
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+        
+        x, y = pygame.mouse.get_pos()
+
+        if x >= 330 and y >= 480 and x <= 390 and y <= 525:
+            if pygame.mouse.get_pressed(3)[0]:
+                pygame.mixer.Sound.play(ClickSound)
+                CurrentWave = 1
+                CharEscaped = 0
+                main()
+        elif x >= 615 and y >= 480 and x <= 670 and y <= 525:
+            if pygame.mouse.get_pressed(3)[0]:
+                pygame.mixer.Sound.play(ClickSound)
+                pygame.quit()
+
+        LoseScreen.render(screen, (0, 0))
+        pygame.display.update()
+
+
 def main():
-    global HandY, HandX, cTime, pTime, cap, detector, screen, HandSprite, OpenHandSprite, CloseHandSprite, NPCs, BG, HandOpen, dt, CurrentWave, TotalWave, RED, GREEN, BLACK, WHITE, GameFont
+    global HandY, HandX, cTime, pTime, cap, detector, screen, HandSprite, OpenHandSprite, CloseHandSprite, NPCs, BG, HandOpen, dt, CurrentWave, TotalWave, RED, GREEN, BLACK, WHITE, GameFont, MagicBox, SCREEN_WIDTH, SCREEN_HEIGHT, BoxScale, CurrentCapture, CaptureGoal, GameOpend, CharEscaped, maxEscape
 
     WaveTime = 0
     running = True
- 
-    main_menu()
+    
+    if not GameOpend:
+        main_menu()
+        GameOpend = True
+
     option_menu()
 
-
-    #### TEMP ######
-    # spawn_char(1, 300, 300)
-    # spawn_char(2, 300, 300)
-    # spawn_char(3, 300, 300)
-    # spawn_char(4, 300, 300)
-    # spawn_char(5, 300, 300)
-    ################
     
     while running:
         for event in pygame.event.get():
@@ -273,11 +321,25 @@ def main():
         WaveTime += dt
 
         WaveText = GameFont.render(f'Wave: {CurrentWave}/{TotalWave}', False, RED)
+        CaptureText = GameFont.render(f'Capture: {CurrentCapture}/{CaptureGoal}', False, RED)
+        EscapeText = GameFont.render(f'Escape: {CharEscaped}/{maxEscape}', False, RED)
 
         screen.blit(BG, (0, 0))
+        screen.blit(MagicBox, (SCREEN_WIDTH - (BoxScale[0] / 2) - 100, SCREEN_HEIGHT - (BoxScale[0] / 2) - 125))
         update_npc(NPCs)
         screen.blit(HandSprite, (HandX, HandY))
         screen.blit(WaveText, (0, 0))
+        screen.blit(CaptureText, ((SCREEN_WIDTH / 2) - (SCREEN_WIDTH / 6), 0))
+        screen.blit(EscapeText, ((SCREEN_WIDTH / 2) + (SCREEN_WIDTH / 4), 0))
+
+        CaptureGoal = CurrentWave + (CurrentWave // 2) + 1
+
+        if CharEscaped >= maxEscape:
+            game_lose()
+
+        if CurrentCapture >= CaptureGoal:
+            CurrentCapture = 0
+            CurrentWave += 1
 
         if CurrentWave > TotalWave:
             game_won()
