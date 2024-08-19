@@ -10,7 +10,7 @@ pygame.init()
 pygame.font.init()
 
 # Screen dimensions
-SCREEN_WIDTH = 1000
+SCREEN_WIDTH = 1180
 SCREEN_HEIGHT = 800
 
 GameFont = pygame.font.SysFont('Comic Sans MS', 30)
@@ -48,6 +48,49 @@ detector = htm.handDetector()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("gud GAME")
 
+#title screen
+
+begin1=pygame.image.load('../assets/begin1.png')
+begin1=pygame.transform.scale(begin1,(SCREEN_WIDTH, SCREEN_HEIGHT))
+
+begin2=pygame.image.load('../assets/begin2.png')
+begin2=pygame.transform.scale(begin2,(SCREEN_WIDTH, SCREEN_HEIGHT))
+
+beginImg=begin1
+
+#screen2
+
+ww1=pygame.image.load('../assets/ww1.png')
+ww1=pygame.transform.scale(ww1,(SCREEN_WIDTH, SCREEN_HEIGHT))
+
+
+ww2=pygame.image.load('../assets/ww2.png')
+ww2=pygame.transform.scale(ww2,(SCREEN_WIDTH, SCREEN_HEIGHT))
+
+wwImg = ww1
+
+#for screen 3
+
+wn1=pygame.image.load('../assets/wn1.png')
+wn1=pygame.transform.scale(wn1,(SCREEN_WIDTH, SCREEN_HEIGHT))
+
+wn2=pygame.image.load('../assets/wn2.png')
+wn2=pygame.transform.scale(wn2,(SCREEN_WIDTH, SCREEN_HEIGHT))
+
+wnImg=wn1
+
+#for screen4
+
+play1=pygame.image.load('../assets/play1.png')
+play1=pygame.transform.scale(play1,(SCREEN_WIDTH, SCREEN_HEIGHT))
+
+play2=pygame.image.load('../assets/play2.png')
+play2=pygame.transform.scale(play2,(SCREEN_WIDTH, SCREEN_HEIGHT))
+
+playImg=play1
+
+
+#for start and exit screen 
 MainMenu1 = pygame.image.load('../assets/MainMenu1.png')
 MainMenu1 = pygame.transform.scale(MainMenu1, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
@@ -60,6 +103,7 @@ MainMenu = pygame.transform.scale(MainMenu, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 MainMenuImg = MainMenu
 
+#for hand and keyboard option
 Option1 = pygame.image.load('../assets/Option1.png')
 Option1 = pygame.transform.scale(Option1, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
@@ -105,6 +149,7 @@ CloseHandSprite = pygame.image.load('../assets/close.png')
 CloseHandSprite = pygame.transform.scale(CloseHandSprite, (CloseHandScale, CloseHandScale))
 
 ClickSound = pygame.mixer.Sound("../assets/Beep.mp3")
+#bgAudio=pygame.mixer.Sound("..assets/bg audio.mp3")
 
 HandSprite = OpenHandSprite
 
@@ -119,6 +164,7 @@ CaptureGoal = 0
 CurrentCapture = 0
 CharEscaped = 0
 maxEscape = 3
+#game over after more than 3 characters have escaped the screen
 
 class NPC(pygame.sprite.Sprite):
     def __init__(self, charNum: int = 1, x: int = 0, y: int = 0, velRange: int = 40):
@@ -191,32 +237,92 @@ def update_npc(NPCs: list) -> None:
     for npc in NPCs:
         npc.update()
 
-def main_menu() -> None:
-    global screen, MainMenuImg, MainMenu, MainMenu1, MainMenu2
+#first screen 
+def screen1() -> None:
+    global screen, begin1, begin2, beginImg, ww1, ww2, wn1, wn2, play1, play2
+
+    # Set up the font for the title
+    font = pygame.font.Font(None, 74)
+    title_text = font.render("TITLE", True, (255, 255, 255))
+
+    # Variable to control the title display
+    show_title = True
+
+    # Variable to control the image state
+    state = "begin"  # Possible states: "begin", "ww", "wn", "play"
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-        
+                return
+
         x, y = pygame.mouse.get_pos()
 
-        if x >= 95 and y >= 100 and x <= 430 and y <= 300:
-            MainMenuImg = MainMenu2
-            if pygame.mouse.get_pressed(3)[0]:
-                pygame.mixer.Sound.play(ClickSound)
-                return 
-        elif x >= 530 and y >= 460 and x <= 860 and y <= 600:
-            MainMenuImg = MainMenu1
-            if pygame.mouse.get_pressed(3)[0]:
-                pygame.mixer.Sound.play(ClickSound)
-                pygame.quit()
-        else:
-            MainMenuImg = MainMenu
+        # Handle the "Begin" button hover and click
+        if state == "begin":
+            if 200 <= x <= 800 and 600 <= y <= 722:
+                beginImg = begin2
+                if pygame.mouse.get_pressed(3)[0]:
+                    pygame.mixer.Sound.play(ClickSound)
+                    show_title = False
+                    state = "ww"
+                    print("Transitioning to ww")  # Debug message
+                    pygame.time.wait(500)
+            else:
+                beginImg = begin1
 
-        screen.blit(MainMenuImg, (0, 0))
+        # Handle the "ww" state hover and click
+        elif state == "ww":
+            if 200 <= x <= 800 and 600 <= y <= 722:
+                beginImg = ww2
+                if pygame.mouse.get_pressed(3)[0]:
+                    pygame.mixer.Sound.play(ClickSound)
+                    state = "wn"
+                    print("Transitioning to wn")  # Debug message
+                    pygame.time.wait(500)
+                    
+            else:
+                beginImg = ww1
+
+        # Handle the "wn" state hover and click
+        elif state == "wn":
+            if 200 <= x <= 800 and 600 <= y <= 722:
+                beginImg = wn2
+                if pygame.mouse.get_pressed(3)[0]:
+                    pygame.mixer.Sound.play(ClickSound)
+                    state = "play"
+                    print("Transitioning to play")  # Debug message
+                    pygame.time.wait(500)
+                    
+            else:
+                beginImg = wn1
+
+        # Handle the "play" state hover and click
+        elif state == "play":
+            if 200 <= x <= 800 and 600 <= y <= 722:
+                beginImg = play2
+                if pygame.mouse.get_pressed(3)[0]:
+                    pygame.mixer.Sound.play(ClickSound)
+                    print("Exiting screen1 function") # Debug message
+                    pygame.time.wait(100)
+                    return
+            else:
+                beginImg = play1
+
+        # Display the background image based on state
+        screen.blit(beginImg, (0, 0))
+
+        # Display the title if show_title is True
+        if show_title:
+            title_rect = title_text.get_rect(center=(screen.get_width() // 2, 100))
+            screen.blit(title_text, title_rect)
+
+        # Update the display
         pygame.display.update()
 
+
+#option screen where user selects hand or keyboard
 def option_menu() -> None:
     global screen, OptionImg, Option, Option1, Option2, HandTracking
 
@@ -244,7 +350,7 @@ def option_menu() -> None:
 
         screen.blit(OptionImg, (0, 0))
         pygame.display.update()
-
+#win screen
 def game_won():
     #330 480, 390 525 - yes
     #615 480, 670 525 - no
@@ -270,7 +376,7 @@ def game_won():
         WinScreen.render(screen, (0, 0))
         pygame.display.update()
 
-
+# lose screen
 def game_lose():
     global LoseScreen, screen, CurrentWave, CharEscaped
 
@@ -303,9 +409,8 @@ def main():
     running = True
     
     if not GameOpend:
-        main_menu()
+        screen1()
         GameOpend = True
-
     option_menu()
 
     
